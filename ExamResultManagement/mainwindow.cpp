@@ -8,6 +8,7 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     createGui();
     createDatabase();
+    makeTestData();
 }
 
 MainWindow::~MainWindow()
@@ -102,7 +103,7 @@ void MainWindow::createGui(){
     ////// Student Tab
     ///
     s_table = new QTableView(tabs->widget(0));
-    s_table->setGeometry(QRect(QPoint(100, 20), QSize(500, 340)));          // Set size and location of the table.
+    s_table->setGeometry(QRect(QPoint(150, 20), QSize(400, 340)));          // Set size and location of the table.
     s_modal = new QSqlQueryModel();
 
     s_addButton = new QPushButton("Student Add", tabs->widget(0));          // Create the button, make "this" the parent
@@ -130,7 +131,7 @@ void MainWindow::createGui(){
     ////// Teacher tab
     ///
     t_table = new QTableView(tabs->widget(1));
-    t_table->setGeometry(QRect(QPoint(100, 20), QSize(500, 340)));          // Set size and location of the table.
+    t_table->setGeometry(QRect(QPoint(150, 20), QSize(400, 340)));          // Set size and location of the table.
     t_modal = new QSqlQueryModel();
 
     t_addButton = new QPushButton("Teacher Add", tabs->widget(1));          // Create the button, make "this" the parent
@@ -158,7 +159,7 @@ void MainWindow::createGui(){
     ////// Reuslt tab
     ///
     r_table = new QTableView(tabs->widget(2));
-    r_table->setGeometry(QRect(QPoint(100, 20), QSize(500, 340)));          // Set size and location of the table.
+    r_table->setGeometry(QRect(QPoint(70, 20), QSize(560, 340)));          // Set size and location of the table.
     r_modal = new QSqlQueryModel();
 
     r_addButton = new QPushButton("Result Add", tabs->widget(2));           // Create the button
@@ -210,6 +211,68 @@ void MainWindow::createGui(){
     connect(r_addButton, &QPushButton::released, this, &MainWindow::resultAddButton);
 }
 
+
+/*!
+    \brief Creating Test data.
+           All data insert into tables.
+           Showing the tables.
+
+    Tables : STUDENT,TEACHER,RESULTS
+*/
+void MainWindow::makeTestData(){
+    QSqlQuery query;
+
+    // Set Student test data
+    static int studentID[5] = {2,5,8,10,15};
+    QString studentName[5] = {"Metin","Samet","Gamze","Sıla","Mike"};
+    QString studentSurname[5] = {"Horzum","Gürses","Ugur","Kaya","Tyson"};
+
+    // Set Teacher test data
+    static int teacherID[2] = {1,2};
+    QString teacherName[2] = {"Veli","Robert"};
+    QString teacherSurname[2] = {"Ozdemir","Hawk"};
+
+    // Set Result test data
+    static int resultID[10] = {1,2,3,4,5,6,7,8,9,10};
+    static int resultGrade[10] = {55,60,70,80,90,100,100,55,45,20};
+    static int resultTeacherID[10] = {1,1,1,1,1,2,2,2,2,2};
+    static int resultStudentID[10] = {2,5,8,10,15,2,5,8,10,15};
+
+    // Insert student test data
+    for ( int i = 0 ; i<5  ; i++ ) {
+        if (!query.exec("INSERT INTO [STUDENTS] (student_id , name , surname ) VALUES ('"+QString::number(studentID[i])+"', '"+studentName[i]+"', '"+studentSurname[i]+"')")){
+            qDebug() << "Can't insert record!";
+        }
+    }
+    query.prepare("SELECT * FROM [STUDENTS]");
+    query.exec();
+    s_modal->setQuery(query);
+    s_table->setModel(s_modal);
+
+    // Insert teacher test data
+    for ( int i = 0 ; i<2  ; i++ ) {
+        if (!query.exec("INSERT INTO [TEACHERS] (teacher_id , name , surname ) VALUES ('"+QString::number(teacherID[i])+"', '"+teacherName[i]+"', '"+teacherSurname[i]+"')")){
+            qDebug() << "Can't insert record!";
+        }
+    }
+    query.prepare("SELECT * FROM [TEACHERS]");
+    query.exec();
+    t_modal->setQuery(query);
+    t_table->setModel(t_modal);
+
+    // Insert result test data
+    for ( int i = 0 ; i<10  ; i++ ) {
+        if (!query.exec("INSERT INTO [RESULTS] ( result_id, result, teacher_id, student_id ) VALUES ('"+QString::number(resultID[i])+"', '"+QString::number(resultGrade[i])+"', '"+QString::number(resultTeacherID[i])+"', '"+QString::number(resultStudentID[i])+"')")){
+            qDebug() << "Can't insert record!";
+        }
+    }
+    query.prepare("SELECT * FROM [RESULTS]");
+    query.exec();
+    r_modal->setQuery(query);
+    r_table->setModel(r_modal);
+}
+
+
 void MainWindow::studentAddButton(){
 
 }
@@ -224,6 +287,7 @@ void MainWindow::resultAddButton(){
 
 void MainWindow::tabsManagement(){
 
+    QSqlQuery query;
     if( tabs->currentIndex() == 0 ){
     }
     else if( tabs->currentIndex() == 1 ){

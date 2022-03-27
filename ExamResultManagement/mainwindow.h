@@ -32,6 +32,8 @@ private slots:
 
     void createTables();
 
+    void makeTestData();
+
     void tabsManagement();
 
     void studentAddButton();
