@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -9,6 +10,7 @@ MainWindow::MainWindow(QWidget *parent)
     createGui();
     createDatabase();
     makeTestData();
+
 }
 
 MainWindow::~MainWindow()
@@ -195,13 +197,30 @@ void MainWindow::createGui(){
 
     ////// Student Filterede By Teacher name tab
     ///
-    st_table = new QTableView(tabs->widget(3));
-    st_table->setGeometry(QRect(QPoint(100, 20), QSize(500, 340)));         // Set size and location of the table.
+    st_listWidget = new QListWidget(tabs->widget(3));
+    st_listWidget->setGeometry(QRect(QPoint(100, 20), QSize(500, 340)));         // Set size and location of the table.
+
+    st_Combobox = new QComboBox(tabs->widget(3));
+    st_Combobox->setGeometry(QRect(QPoint(250, 380), QSize(200, 50)));       // Set size and location of the Combobox.
+    st_Combobox->addItem("Teachers");
+
+    st_searchButton = new QPushButton("Search", tabs->widget(3));           // Create the button
+    st_searchButton->setGeometry(QRect(QPoint(270, 450), QSize(160, 50)));      // Set size and location of the button.
+
+    filter = new QSortFilterProxyModel();
 
     ////// Student Filterede By Teacher name tab
     ///
     sg_table = new QTableView(tabs->widget(4));
     sg_table->setGeometry(QRect(QPoint(100, 20), QSize(500, 340)));         // Set size and location of the table.
+    sg_modal = new QSqlQueryModel();
+
+    sg_Combobox = new QComboBox(tabs->widget(4));
+    sg_Combobox->setGeometry(QRect(QPoint(250, 380), QSize(200, 50)));       // Set size and location of the Combobox.
+    sg_Combobox->addItem("Students");
+
+    sg_searchButton = new QPushButton("Search", tabs->widget(4));           // Create the button
+    sg_searchButton->setGeometry(QRect(QPoint(270, 450), QSize(160, 50)));      // Set size and location of the button.
 
     ////// Connect button signal
     ///
@@ -209,6 +228,8 @@ void MainWindow::createGui(){
     connect(s_addButton, &QPushButton::released, this, &MainWindow::studentAddButton);
     connect(t_addButton, &QPushButton::released, this, &MainWindow::teacherAddButton);
     connect(r_addButton, &QPushButton::released, this, &MainWindow::resultAddButton);
+    connect(st_searchButton, &QPushButton::released, this, &MainWindow::searchTeacherButton);
+    connect(sg_searchButton, &QPushButton::released, this, &MainWindow::searchStudentButton);
 }
 
 
@@ -220,49 +241,39 @@ void MainWindow::createGui(){
     Tables : STUDENT,TEACHER,RESULTS
 */
 void MainWindow::makeTestData(){
+
     QSqlQuery query;
 
-    // Set Student test data
-    static int studentID[5] = {2,5,8,10,15};
-    QString studentName[5] = {"Metin","Samet","Gamze","Sıla","Mike"};
-    QString studentSurname[5] = {"Horzum","Gürses","Ugur","Kaya","Tyson"};
-
-    // Set Teacher test data
-    static int teacherID[2] = {1,2};
-    QString teacherName[2] = {"Veli","Robert"};
-    QString teacherSurname[2] = {"Ozdemir","Hawk"};
-
-    // Set Result test data
-    static int resultID[10] = {1,2,3,4,5,6,7,8,9,10};
-    static int resultGrade[10] = {55,60,70,80,90,100,100,55,45,20};
-    static int resultTeacherID[10] = {1,1,1,1,1,2,2,2,2,2};
-    static int resultStudentID[10] = {2,5,8,10,15,2,5,8,10,15};
-
-    // Insert student test data
+    ////// Insert student test data
+    ///
     for ( int i = 0 ; i<5  ; i++ ) {
-        if (!query.exec("INSERT INTO [STUDENTS] (student_id , name , surname ) VALUES ('"+QString::number(studentID[i])+"', '"+studentName[i]+"', '"+studentSurname[i]+"')")){
+        if (!query.exec("INSERT INTO [STUDENTS] (student_id , name , surname ) VALUES ('"+QString::number(studentIDBuff[i])+"', '"+studentNameBuff[i]+"', '"+studentSurnameBuff[i]+"')")){
             qDebug() << "Can't insert record!";
         }
+        sg_Combobox->addItem(studentNameBuff[i]);       // Adding Students
     }
     query.prepare("SELECT * FROM [STUDENTS]");
     query.exec();
     s_modal->setQuery(query);
     s_table->setModel(s_modal);
 
-    // Insert teacher test data
+    ////// Insert teacher test data
+    ///
     for ( int i = 0 ; i<2  ; i++ ) {
-        if (!query.exec("INSERT INTO [TEACHERS] (teacher_id , name , surname ) VALUES ('"+QString::number(teacherID[i])+"', '"+teacherName[i]+"', '"+teacherSurname[i]+"')")){
+        if (!query.exec("INSERT INTO [TEACHERS] (teacher_id , name , surname ) VALUES ('"+QString::number(teacherIDBuff[i])+"', '"+teacherNameBuff[i]+"', '"+teacherSurnameBuff[i]+"')")){
             qDebug() << "Can't insert record!";
         }
+        st_Combobox->addItem(teacherNameBuff[i]);       // Adding Teachers
     }
     query.prepare("SELECT * FROM [TEACHERS]");
     query.exec();
     t_modal->setQuery(query);
     t_table->setModel(t_modal);
 
-    // Insert result test data
+    ////// Insert result test data
+    ///
     for ( int i = 0 ; i<10  ; i++ ) {
-        if (!query.exec("INSERT INTO [RESULTS] ( result_id, result, teacher_id, student_id ) VALUES ('"+QString::number(resultID[i])+"', '"+QString::number(resultGrade[i])+"', '"+QString::number(resultTeacherID[i])+"', '"+QString::number(resultStudentID[i])+"')")){
+        if (!query.exec("INSERT INTO [RESULTS] ( result_id, result, teacher_id, student_id ) VALUES ('"+QString::number(resultIDBuff[i])+"', '"+QString::number(resultGradeBuff[i])+"', '"+QString::number(resultTeacherIDBuff[i])+"', '"+QString::number(resultStudentIDBuff[i])+"')")){
             qDebug() << "Can't insert record!";
         }
     }
@@ -270,32 +281,175 @@ void MainWindow::makeTestData(){
     query.exec();
     r_modal->setQuery(query);
     r_table->setModel(r_modal);
+    sg_modal->setQuery(query);
+    sg_table->setModel(sg_modal);
 }
 
 
 void MainWindow::studentAddButton(){
 
+    QSqlQuery query;
+
+    int id = s_editID->text().toInt();
+    QString name = s_editName->text();
+    QString surname = s_editSurname->text();
+    if( id != 0 && name != "" && surname != ""){
+        if (!query.exec("INSERT INTO [STUDENTS] (student_id , name , surname ) VALUES ('"+QString::number(id)+"', '"+name+"', '"+surname+"')")){
+            qDebug() << "Can't insert record!";
+            msgBox.information(this,tr("Warning!"),tr("Please enter different ID"));
+        }
+        else{
+            msgBox.information(this,tr("Warning!"),tr("Succesfully Added"));
+        }
+        sg_Combobox->addItem(name);
+    }
+    else{
+        msgBox.information(this,tr("Warning!"),tr("Please enter information"));
+    }
+
+    query.prepare("SELECT * FROM [STUDENTS]");
+    query.exec();
+    s_modal->setQuery(query);
+    s_table->setModel(s_modal);
 }
 
 void MainWindow::teacherAddButton(){
 
+    QSqlQuery query;
+
+    int id = t_editID->text().toInt();
+    QString name = t_editName->text();
+    QString surname = t_editSurname->text();
+    if( id != 0 && name != "" && surname != ""){
+        if (!query.exec("INSERT INTO [TEACHERS] (teacher_id , name , surname ) VALUES ('"+QString::number(id)+"', '"+name+"', '"+surname+"')")){
+            qDebug() << "Can't insert record!";
+            msgBox.information(this,tr("Warning!"),tr("Please enter different ID"));
+        }
+        else{
+            msgBox.information(this,tr("Warning!"),tr("Succesfully Added"));
+        }
+        st_Combobox->addItem(name);
+    }
+    else{
+        msgBox.information(this,tr("Warning!"),tr("Please enter information"));
+    }
+
+    query.prepare("SELECT * FROM [TEACHERS]");
+    query.exec();
+    t_modal->setQuery(query);
+    t_table->setModel(t_modal);
 }
 
 void MainWindow::resultAddButton(){
+    QSqlQuery query;
 
+    int id = r_editID->text().toInt();
+    int grade = r_editGrade->text().toInt();
+    int t_id = r_editTeacherID->text().toInt();
+    int s_id = r_editStudentID->text().toInt();
+
+    if( id != 0 && grade != 0 && t_id != 0 && s_id != 0 ){
+        if (!query.exec("INSERT INTO [RESULTS] (result_id, result, teacher_id, student_id ) VALUES ('"+QString::number(id)+"', '"+QString::number(grade)+"', '"+QString::number(t_id)+"', '"+QString::number(s_id)+"')")){
+            qDebug() << "Can't insert record!";
+            msgBox.information(this,tr("Warning!"),tr("Please enter different ID"));
+        }
+        else{
+            msgBox.information(this,tr("Warning!"),tr("Succesfully Added"));
+        }
+    }
+    else{
+        msgBox.information(this,tr("Warning!"),tr("Please enter information"));
+    }
+
+    query.prepare("SELECT * FROM [RESULTS]");
+    query.exec();
+    r_modal->setQuery(query);
+    r_table->setModel(r_modal);
 }
+
+void MainWindow::searchTeacherButton(){
+
+    QSqlQuery query;
+    QString studentName;
+    int studentId;
+    QString teacherName;
+    int teacherId;
+
+    filter->setSourceModel(s_modal);
+    s_table->setModel(filter);
+
+    teacherName = st_Combobox->currentText();
+    teacherId = st_Combobox->currentIndex();
+
+    st_listWidget->clear();
+
+    if( st_Combobox->currentIndex() != 0 ){
+        if( query.exec("SELECT * FROM [RESULTS]")){
+             qDebug() << "Can't Execute Query !";
+        }
+        while(query.next()){
+            if( teacherId == query.value(2).toInt() ){
+                studentId = query.value(3).toInt();
+                st_listWidget->addItem(studentNameBuff[studentId-1]);
+            }
+        }
+    }
+    else{
+        msgBox.information(this,tr("Warning!"),tr("Please select Teacher Name"));
+    }
+}
+
+void MainWindow::searchStudentButton(){
+
+    QSqlQuery query;
+    QMessageBox msgBox;
+    QString studentName;
+    int studentId;
+
+    filter->setSourceModel(sg_modal);
+    sg_table->setModel(filter);
+
+    studentName = sg_Combobox->currentText();
+    studentId = sg_Combobox->currentIndex();
+
+    if( sg_Combobox->currentIndex() != 0 ){
+        filter->setFilterRegularExpression(QString::number(studentIDBuff[studentId-1]));
+    }
+    else{
+        msgBox.information(this,tr("Warning!"),tr("Please select Student Name"));
+    }
+}
+
+
 
 void MainWindow::tabsManagement(){
 
     QSqlQuery query;
     if( tabs->currentIndex() == 0 ){
+        s_editID->clear();
+        s_editName->clear();
+        s_editSurname->clear();
     }
     else if( tabs->currentIndex() == 1 ){
+        t_editID->clear();
+        t_editName->clear();
+        t_editSurname->clear();
     }
     else if( tabs->currentIndex() == 2 ){
+        r_editID->clear();
+        r_editGrade->clear();
+        r_editStudentID->clear();
+        r_editTeacherID->clear();
     }
     else if( tabs->currentIndex() == 3 ){
+        st_listWidget->clear();
+        st_Combobox->setCurrentIndex(0);
     }
     else if( tabs->currentIndex() == 4 ){
+        sg_Combobox->setCurrentIndex(0);
+        query.prepare("SELECT * FROM [RESULTS]");
+        query.exec();
+        sg_modal->setQuery(query);
+        sg_table->setModel(sg_modal);
     }
 }

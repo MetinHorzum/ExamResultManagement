@@ -6,10 +6,14 @@
 #include <QPushButton>
 #include <QLabel>
 #include <QLineEdit>
+#include <QComboBox>
+#include <QListWidget>
+#include <QSortFilterProxyModel>
 #include <QDebug>
 #include <QDir>
 #include <QSqlQuery>
 #include <QSqlQueryModel>
+#include <QMessageBox>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -22,6 +26,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
 
 
 private slots:
@@ -42,8 +47,32 @@ private slots:
 
     void resultAddButton();
 
-  private:
+    void searchTeacherButton();
 
+    void searchStudentButton();
+private:
+
+    QMessageBox msgBox;
+
+    // Set Student test data
+    int studentIDBuff[5] = {2,5,8,10,15};
+    QString studentNameBuff[5] = {"Metin","Samet","Gamze","Sıla","Mike"};
+    QString studentSurnameBuff[5] = {"Horzum","Gürses","Ugur","Kaya","Tyson"};
+
+    // Set Teacher test data
+    int teacherIDBuff[2] = {1,2};
+    QString teacherNameBuff[2] = {"Veli","Robert"};
+    QString teacherSurnameBuff[2] = {"Ozdemir","Hawk"};
+
+    // Set Result test data
+    int resultIDBuff[10] = {1,2,3,4,5,6,7,8,9,10};
+    int resultGradeBuff[10] = {55,60,70,80,90,100,100,55,45,20};
+    int resultTeacherIDBuff[10] = {1,1,1,1,1,2,2,2,2,2};
+    int resultStudentIDBuff[10] = {2,5,8,10,15,2,5,8,10,15};
+
+private:
+
+    QSortFilterProxyModel *filter;
     QTabWidget *tabs;
 
     /**** STUDENT ****/
@@ -85,10 +114,15 @@ private slots:
     QLineEdit   *r_editTeacherID;
 
     /**** STUDENT BY TEACHER NAME ****/
-    QTableView *st_table;
+    QListWidget *st_listWidget;
+    QComboBox *st_Combobox;
+    QPushButton *st_searchButton;
 
     /**** STUDENT SHOWING GRADES ****/
     QTableView *sg_table;
+    QSqlQueryModel *sg_modal;
+    QComboBox *sg_Combobox;
+    QPushButton *sg_searchButton;
 
     Ui::MainWindow *ui;
 };
